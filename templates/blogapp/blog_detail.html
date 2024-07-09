@@ -1,0 +1,74 @@
+{% extends "blogapp/base.html" %}
+{% block title %}{{ blog.title }}{% endblock title %}
+
+{% block body %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card mb-4">
+                <img src="{{ blog.image.url }}" class="card-img-top">
+                <div class="card-body">
+                    <h1 class="card-title">Title: {{ blog.title }}</h1>
+                    <p class="card-text">Description: {{ blog.description }}</p> 
+                    <a href="{% url 'update_blog' blog.pk %}" class="btn btn-success btn-sm">Update</a>
+                    <a href="{% url 'delete_blog' blog.pk %}" class="btn btn-danger btn-sm">Delete</a>
+                </div>
+                <div class="card-body">
+                    <a href="{% url 'blog_list' %}" class="btn btn-secondary">Back to Blog List</a>
+                </div>
+            </div>
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h2 class="card-title">Comments</h2>
+                    <ul id="comment-list" class="list-group list-group-flush">
+                        {% for comment in comments %}
+                            <li class="list-group-item">
+                                <strong>{{ comment.author.username }}</strong>: {{ comment.text }} <small class="text-muted">({{ comment.created_at }})</small>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            <div class="card mb-4" id="add-comment-card">
+                <div class="card-body">
+                    <h2 class="card-title">Add a Comment</h2>
+                    <form id="comment-form" method="post">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script type="text/javascript">
+    $(document).ready(function() {
+        // Handle form submission via AJAX
+        $('#comment-form').submit(function(event) {
+            event.preventDefault(); // Prevent default form submission
+            var formData = $(this).serialize(); // Serialize form data "When submitting the form data via AJAX, it needs to be in a format that the server can easily process."
+
+            // AJAX post request
+            $.ajax({
+                type: 'POST',
+                url: '{% url "blog_detail" pk=blog.pk %}', // URL to submit the form data
+                data: formData,
+                success: function(response) {
+                    // Clear the form input
+                    $('#id_text').val('');
+
+                    // Append new comment to comment list
+                    $('#comment-list').append('<li class="list-group-item"><strong>' + response.author + '</strong>: ' + response.text + ' <small class="text-muted">(' + response.created_at + ')</small></li>');
+                },
+                error: function(xhr, errmsg, err) {
+                    console.log(xhr.status + ": " + xhr.responseText); // Log error message
+                    alert('Failed to add comment. Please try again.'); // Show error alert
+                }
+            });
+        });
+    });
+</script>
+{% endblock body %}
